@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>It is or They are</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial Rounded MT Bold', 'Arial', sans-serif;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Arial Rounded MT Bold', 'Arial', sans-serif;
+            touch-action: manipulation;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        .game-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-image: url('img/body.png');
+            background-size: cover;
+            background-position: center;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        
+        .container {
+            width: 100%;
+            text-align: center;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            max-width: 100%;
+        }
+        
+        .header {
+            flex-shrink: 0;
+            padding: 5px 0;
+        }
+        
+        h1 {
+            color: white;
+            font-size: clamp(1.2rem, 4vw, 2.5rem);
+            margin-bottom: 3px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            line-height: 1.2;
+        }
+        
+        .subtitle {
+            color: #ffeb3b;
+            font-size: clamp(0.8rem, 3vw, 1.1rem);
+            margin-bottom: 8px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+            line-height: 1.2;
+        }
+        
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto 8px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 15px;
+            border-radius: 12px;
+            color: white;
+            font-size: clamp(0.8rem, 3vw, 1rem);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(5px);
+            flex-shrink: 0;
+        }
+        
+        .game-board-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            min-height: 0;
+            padding: 5px;
+        }
+        
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            grid-gap: 8px;
+            width: 100%;
+            height: 100%;
+            max-width: 100%;
+            max-height: 100%;
+            margin: 0 auto;
+            perspective: 1000px;
+        }
+        
+        .card {
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.5s ease;
+            cursor: pointer;
+            border-radius: 8px;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+            min-height: 50px;
+            min-width: 40px;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+        
+        .card.matched {
+            transform: rotateY(180deg);
+            box-shadow: 0 0 12px #4caf50;
+            cursor: default;
+        }
+        
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid white;
+        }
+        
+        .card-front {
+            background: white;
+            transform: rotateY(180deg);
+            overflow: hidden;
+        }
+        
+        .card-front img {
+            width: 80%;
+            height: 80%;
+            object-fit: contain;
+            pointer-events: none;
+        }
+        
+        .card-back {
+            background-image: url('img/card.png');
+            background-size: cover;
+            background-position: center;
+            color: white;
+            font-size: clamp(1.5rem, 5vw, 2rem);
+            font-weight: bold;
+        }
+        
+        .controls {
+            margin-top: 8px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-shrink: 0;
+            padding: 5px 0;
+        }
+        
+        button {
+            background: linear-gradient(45deg, #FF9800, #FF5722);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: clamp(0.9rem, 3vw, 1.1rem);
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+            min-height: 44px;
+            min-width: 120px;
+            touch-action: manipulation;
+        }
+        
+        button:active {
+            transform: scale(0.95);
+        }
+        
+        .win-message {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            color: white;
+            text-align: center;
+            display: none;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        
+        .win-message h2 {
+            margin-bottom: 15px;
+            color: #ffeb3b;
+            text-shadow: 0 0 10px rgba(255, 235, 59, 0.7);
+            font-size: clamp(1.8rem, 6vw, 3rem);
+            line-height: 1.2;
+        }
+        
+        .win-message p {
+            margin-bottom: 10px;
+            font-size: clamp(1rem, 4vw, 1.8rem);
+            line-height: 1.3;
+        }
+        
+        .quiz-message {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            color: white;
+            text-align: center;
+            display: none;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        
+        .quiz-message h2 {
+            margin-bottom: 15px;
+            color: #ffeb3b;
+            text-shadow: 0 0 10px rgba(255, 235, 59, 0.7);
+            font-size: clamp(1.5rem, 5vw, 2.5rem);
+            line-height: 1.2;
+        }
+        
+        .quiz-image {
+            width: 150px;
+            height: 150px;
+            margin: 15px 0;
+            border-radius: 12px;
+            border: 3px solid white;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .quiz-image img {
+            width: 80%;
+            height: 80%;
+            object-fit: contain;
+        }
+        
+        .quiz-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 15px 0;
+            width: 100%;
+            max-width: 300px;
+        }
+        
+        .quiz-option {
+            background: linear-gradient(45deg, #2196F3, #21CBF3);
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            font-size: clamp(1rem, 3vw, 1.2rem);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+        }
+        
+        .quiz-option:active {
+            transform: scale(0.95);
+        }
+        
+        .quiz-option.correct {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+        }
+        
+        .quiz-option.incorrect {
+            background: linear-gradient(45deg, #f44336, #d32f2f);
+        }
+        
+        .firework {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            box-shadow: 0 0 8px 2px;
+            animation: explode 1s forwards;
+        }
+        
+        @keyframes explode {
+            0% {
+                transform: translate(0, 0);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--tx), var(--ty));
+                opacity: 0;
+            }
+        }
+        
+        /* Мобильная адаптация */
+        @media (max-width: 1024px) {
+            .game-board {
+                grid-template-columns: repeat(5, 1fr);
+                grid-template-rows: repeat(4, 1fr);
+                grid-gap: 6px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 5px;
+            }
+            
+            .game-board {
+                grid-template-columns: repeat(4, 1fr);
+                grid-template-rows: repeat(5, 1fr);
+                grid-gap: 5px;
+            }
+            
+            .card {
+                min-height: 45px;
+            }
+            
+            .quiz-image {
+                width: 120px;
+                height: 120px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .game-board {
+                grid-template-columns: repeat(4, 1fr);
+                grid-template-rows: repeat(5, 1fr);
+                grid-gap: 4px;
+            }
+            
+            .card {
+                min-height: 40px;
+            }
+            
+            .card-back {
+                font-size: 1.3rem;
+            }
+            
+            .quiz-image {
+                width: 100px;
+                height: 100px;
+            }
+        }
+        
+        @media (max-width: 360px) {
+            .game-board {
+                grid-template-columns: repeat(4, 1fr);
+                grid-template-rows: repeat(5, 1fr);
+                grid-gap: 3px;
+            }
+            
+            .card {
+                min-height: 35px;
+            }
+        }
+        
+        /* Ландшафтная ориентация для мобильных */
+        @media (max-width: 900px) and (orientation: landscape) {
+            .game-board {
+                grid-template-columns: repeat(5, 1fr);
+                grid-template-rows: repeat(4, 1fr);
+                grid-gap: 4px;
+            }
+            
+            .header {
+                padding: 2px 0;
+            }
+            
+            .game-info {
+                padding: 5px 10px;
+                margin-bottom: 4px;
+            }
+            
+            .quiz-message {
+                padding: 10px;
+            }
+            
+            .quiz-image {
+                width: 80px;
+                height: 80px;
+                margin: 10px 0;
+            }
+        }
+        
+        /* Исправление для iOS */
+        @supports (-webkit-touch-callout: none) {
+            .game-container {
+                min-height: -webkit-fill-available;
+            }
+            
+            .card {
+                -webkit-touch-callout: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="container">
+            <div class="header">
+                <h1>It is or They are</h1>
+                <p class="subtitle">Найди пары: единственное и множественное число!</p>
+            </div>
+            
+            <div class="game-info">
+                <div class="moves">Ходы: <span id="moves-count">0</span></div>
+                <div class="timer">Время: <span id="timer">00:00</span></div>
+            </div>
+            
+            <div class="game-board-container">
+                <div class="game-board" id="game-board">
+                    <!-- Карточки будут сгенерированы скриптом -->
+                </div>
+            </div>
+            
+            <div class="controls">
+                <button id="restart-btn">Новая игра</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="win-message" id="win-message">
+        <h2>Поздравляем!</h2>
+        <p>Вы нашли все пары!</p>
+        <p>Ходы: <span id="final-moves">0</span></p>
+        <p>Время: <span id="final-time">00:00</span></p>
+        <button id="play-again-btn">Играть снова</button>
+    </div>
+
+    <div class="quiz-message" id="quiz-message">
+        <h2 id="quiz-question">Вопрос</h2>
+        <div class="quiz-image" id="quiz-image">
+            <img id="quiz-img" src="" alt="">
+        </div>
+        <div class="quiz-options" id="quiz-options">
+            <!-- Варианты ответов будут сгенерированы скриптом -->
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Элементы DOM
+            const gameBoard = document.getElementById('game-board');
+            const movesCount = document.getElementById('moves-count');
+            const timer = document.getElementById('timer');
+            const restartBtn = document.getElementById('restart-btn');
+            const winMessage = document.getElementById('win-message');
+            const finalMoves = document.getElementById('final-moves');
+            const finalTime = document.getElementById('final-time');
+            const playAgainBtn = document.getElementById('play-again-btn');
+            const quizMessage = document.getElementById('quiz-message');
+            const quizQuestion = document.getElementById('quiz-question');
+            const quizImage = document.getElementById('quiz-img');
+            const quizOptions = document.getElementById('quiz-options');
+            
+            // Состояние игры
+            let cards = [];
+            let flippedCards = [];
+            let moves = 0;
+            let matchedPairs = 0;
+            let gameStarted = false;
+            let timerInterval;
+            let seconds = 0;
+            let gamePaused = false;
+            
+            // Пары единственное/множественное число
+            const wordPairs = [
+                { singular: 'apple', plural: 'apples' },
+                { singular: 'banana', plural: 'bananas' },
+                { singular: 'biscuit', plural: 'biscuits' },
+                { singular: 'burger', plural: 'burgers' },
+                { singular: 'cake', plural: 'cakes' },
+                { singular: 'chips', plural: 'chips1' },
+                { singular: 'lemon', plural: 'lemons' },
+                { singular: 'mango', plural: 'mangos' },
+                { singular: 'orange', plural: 'oranges' },
+                { singular: 'sandwich', plural: 'sandwiches' }
+            ];
+
+            // Квиз вопросы с правильными изображениями
+            const quizQuestions = [
+                // Единственное число - показываем один предмет
+                { question: "Look at the picture. ... an apple.", options: ["It is", "They are", "I am"], correct: 0, image: "apple" },
+                { question: "Look at the picture. ... a banana.", options: ["It is", "They are", "We are"], correct: 0, image: "banana" },
+                { question: "Look at the picture. ... a biscuit.", options: ["It is", "They are", "You are"], correct: 0, image: "biscuit" },
+                { question: "Look at the picture. ... a burger.", options: ["It is", "They are", "We are"], correct: 0, image: "burger" },
+                { question: "Look at the picture. ... a cake.", options: ["It is", "They are", "She is"], correct: 0, image: "cake" },
+                { question: "Look at the picture. ... a lemon.", options: ["It is", "They are", "We are"], correct: 0, image: "lemon" },
+                { question: "Look at the picture. ... a mango.", options: ["It is", "They are", "She is"], correct: 0, image: "mango" },
+                { question: "Look at the picture. ... an orange.", options: ["It is", "They are", "I am"], correct: 0, image: "orange" },
+                { question: "Look at the picture. ... a sandwich.", options: ["It is", "They are", "He is"], correct: 0, image: "sandwich" },
+                
+                // Множественное число - показываем несколько предметов
+                { question: "Look at the picture. ... apples.", options: ["It is", "They are", "He is"], correct: 1, image: "apples" },
+                { question: "Look at the picture. ... bananas.", options: ["It is", "They are", "She is"], correct: 1, image: "bananas" },
+                { question: "Look at the picture. ... biscuits.", options: ["It is", "They are", "I am"], correct: 1, image: "biscuits" },
+                { question: "Look at the picture. ... burgers.", options: ["It is", "They are", "He is"], correct: 1, image: "burgers" },
+                { question: "Look at the picture. ... cakes.", options: ["It is", "They are", "You are"], correct: 1, image: "cakes" },
+                { question: "Look at the picture. ... chips.", options: ["It is", "They are", "I am"], correct: 1, image: "chips" },
+                { question: "Look at the picture. ... lemons.", options: ["It is", "They are", "He is"], correct: 1, image: "lemons" },
+                { question: "Look at the picture. ... mangos.", options: ["It is", "They are", "You are"], correct: 1, image: "mangos" },
+                { question: "Look at the picture. ... oranges.", options: ["It is", "They are", "We are"], correct: 1, image: "oranges" },
+                { question: "Look at the picture. ... sandwiches.", options: ["It is", "They are", "She is"], correct: 1, image: "sandwiches" }
+            ];
+
+            // Функция для определения типа устройства
+            function isTouchDevice() {
+                return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+            }
+            
+            // Создание карточек
+            function createCards() {
+                // Создаем пары карточек
+                let cardPairs = [];
+                wordPairs.forEach(pair => {
+                    cardPairs.push(pair.singular);
+                    cardPairs.push(pair.plural);
+                });
+                
+                // Перемешиваем карточки
+                cardPairs.sort(() => Math.random() - 0.5);
+                
+                // Очищаем игровое поле
+                gameBoard.innerHTML = '';
+                
+                // Создаем HTML для каждой карточки
+                cardPairs.forEach((word, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.dataset.word = word;
+                    card.dataset.index = index;
+                    
+                    card.innerHTML = `
+                        <div class="card-front">
+                            <img src="img/${word}.png" alt="${word}" loading="lazy">
+                        </div>
+                        <div class="card-back">
+                            ?
+                        </div>
+                    `;
+                    
+                    // Добавляем обработчики для touch и click
+                    if (isTouchDevice()) {
+                        // Для touch-устройств
+                        card.addEventListener('touchstart', handleCardTouch, { passive: true });
+                    } else {
+                        // Для desktop
+                        card.addEventListener('click', handleCardClick);
+                    }
+                    
+                    // Добавляем обработчик click для совместимости
+                    card.addEventListener('click', handleCardClick);
+                    
+                    gameBoard.appendChild(card);
+                });
+                
+                // Сохраняем ссылки на все карточки
+                cards = Array.from(document.querySelectorAll('.card'));
+            }
+            
+            // Обработчик для touch устройств
+            function handleCardTouch(e) {
+                e.preventDefault();
+                const card = e.currentTarget;
+                flipCard(card);
+            }
+            
+            // Обработчик для click
+            function handleCardClick(e) {
+                if (gamePaused) return;
+                const card = e.currentTarget;
+                flipCard(card);
+            }
+            
+            // Переворот карточки
+            function flipCard(card) {
+                // Если игра на паузе, игнорируем клик
+                if (gamePaused) return;
+                
+                // Если игра не начата, запускаем таймер
+                if (!gameStarted) {
+                    startTimer();
+                    gameStarted = true;
+                }
+                
+                // Если карточка уже перевернута или совпала, игнорируем клик
+                if (card.classList.contains('flipped') || card.classList.contains('matched')) {
+                    return;
+                }
+                
+                // Если уже перевернуто 2 карточки, игнорируем клик
+                if (flippedCards.length === 2) {
+                    return;
+                }
+                
+                // Переворачиваем карточку
+                card.classList.add('flipped');
+                flippedCards.push(card);
+                
+                // Если перевернуто 2 карточки, проверяем на совпадение
+                if (flippedCards.length === 2) {
+                    moves++;
+                    movesCount.textContent = moves;
+                    
+                    setTimeout(checkMatch, 500);
+                }
+            }
+            
+            // Проверка совпадения карточек
+            function checkMatch() {
+                const card1 = flippedCards[0];
+                const card2 = flippedCards[1];
+                
+                const word1 = card1.dataset.word;
+                const word2 = card2.dataset.word;
+                
+                // Проверяем, являются ли слова парой (единственное/множественное)
+                let isMatch = false;
+                
+                for (const pair of wordPairs) {
+                    if ((word1 === pair.singular && word2 === pair.plural) || 
+                        (word1 === pair.plural && word2 === pair.singular)) {
+                        isMatch = true;
+                        break;
+                    }
+                }
+                
+                if (isMatch) {
+                    // Карточки совпали
+                    card1.classList.add('matched');
+                    card2.classList.add('matched');
+                    
+                    matchedPairs++;
+                    
+                    // Показываем квиз после нахождения пары
+                    setTimeout(showQuiz, 800);
+                    
+                    // Проверяем, завершена ли игра
+                    if (matchedPairs === wordPairs.length) {
+                        setTimeout(endGame, 1000);
+                    }
+                } else {
+                    // Карточки не совпали
+                    setTimeout(() => {
+                        card1.classList.remove('flipped');
+                        card2.classList.remove('flipped');
+                    }, 1000);
+                }
+                
+                // Очищаем массив перевернутых карточек
+                flippedCards = [];
+            }
+            
+            // Показать квиз
+            function showQuiz() {
+                gamePaused = true;
+                
+                // Выбираем случайный вопрос
+                const randomIndex = Math.floor(Math.random() * quizQuestions.length);
+                const quiz = quizQuestions[randomIndex];
+                
+                // Устанавливаем вопрос и изображение
+                quizQuestion.textContent = quiz.question;
+                quizImage.src = `img/${quiz.image}.png`;
+                quizImage.alt = quiz.image;
+                
+                // Создаем варианты ответов
+                quizOptions.innerHTML = '';
+                quiz.options.forEach((option, index) => {
+                    const button = document.createElement('button');
+                    button.className = 'quiz-option';
+                    button.textContent = option;
+                    button.addEventListener('click', () => checkQuizAnswer(index, quiz.correct, button));
+                    quizOptions.appendChild(button);
+                });
+                
+                // Показываем квиз
+                quizMessage.style.display = 'flex';
+            }
+            
+            // Проверка ответа в квизе
+            function checkQuizAnswer(selectedIndex, correctIndex, button) {
+                const allButtons = quizOptions.querySelectorAll('.quiz-option');
+                
+                // Отключаем все кнопки
+                allButtons.forEach(btn => {
+                    btn.style.pointerEvents = 'none';
+                });
+                
+                if (selectedIndex === correctIndex) {
+                    // Правильный ответ
+                    button.classList.add('correct');
+                    setTimeout(() => {
+                        quizMessage.style.display = 'none';
+                        gamePaused = false;
+                    }, 1000);
+                } else {
+                    // Неправильный ответ
+                    button.classList.add('incorrect');
+                    // Показываем правильный ответ
+                    allButtons[correctIndex].classList.add('correct');
+                    
+                    // Через секунду показываем новый вопрос
+                    setTimeout(() => {
+                        quizMessage.style.display = 'none';
+                        setTimeout(showQuiz, 300);
+                    }, 1000);
+                }
+            }
+            
+            // Запуск таймера
+            function startTimer() {
+                seconds = 0;
+                clearInterval(timerInterval);
+                timerInterval = setInterval(() => {
+                    if (!gamePaused) {
+                        seconds++;
+                        const minutes = Math.floor(seconds / 60);
+                        const remainingSeconds = seconds % 60;
+                        timer.textContent = `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+                    }
+                }, 1000);
+            }
+            
+            // Завершение игры
+            function endGame() {
+                clearInterval(timerInterval);
+                
+                // Показываем победное сообщение
+                finalMoves.textContent = moves;
+                finalTime.textContent = timer.textContent;
+                
+                // Создаем салют
+                createFireworks();
+                
+                setTimeout(() => {
+                    winMessage.style.display = 'flex';
+                }, 1000);
+            }
+            
+            // Создание салюта
+            function createFireworks() {
+                const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
+                
+                for (let i = 0; i < 80; i++) {
+                    const firework = document.createElement('div');
+                    firework.className = 'firework';
+                    
+                    const color = colors[Math.floor(Math.random() * colors.length)];
+                    firework.style.backgroundColor = color;
+                    firework.style.boxShadow = `0 0 8px 2px ${color}`;
+                    
+                    const tx = (Math.random() - 0.5) * 300;
+                    const ty = (Math.random() - 0.5) * 300;
+                    firework.style.setProperty('--tx', `${tx}px`);
+                    firework.style.setProperty('--ty', `${ty}px`);
+                    
+                    firework.style.left = `${Math.random() * 100}vw`;
+                    firework.style.top = `${Math.random() * 100}vh`;
+                    
+                    document.body.appendChild(firework);
+                    
+                    // Удаляем элемент после анимации
+                    setTimeout(() => {
+                        firework.remove();
+                    }, 1000);
+                }
+            }
+            
+            // Начало новой игры
+            function startNewGame() {
+                // Сбрасываем состояние игры
+                flippedCards = [];
+                moves = 0;
+                matchedPairs = 0;
+                gameStarted = false;
+                gamePaused = false;
+                movesCount.textContent = moves;
+                timer.textContent = '00:00';
+                clearInterval(timerInterval);
+                
+                // Скрываем сообщения
+                winMessage.style.display = 'none';
+                quizMessage.style.display = 'none';
+                
+                // Создаем новые карточки
+                createCards();
+            }
+            
+            // Обработчики событий для кнопок
+            restartBtn.addEventListener('click', startNewGame);
+            playAgainBtn.addEventListener('click', startNewGame);
+            
+            // Оптимизация для мобильных
+            document.addEventListener('touchmove', function(e) {
+                if (e.scale !== 1) {
+                    e.preventDefault();
+                }
+            }, { passive: false });
+            
+            // Предотвращение контекстного меню на мобильных
+            document.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+            });
+            
+            // Начало игры при загрузке страницы
+            startNewGame();
+        });
+    </script>
+</body>
+</html>
